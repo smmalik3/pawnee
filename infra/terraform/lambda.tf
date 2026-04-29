@@ -24,7 +24,8 @@ resource "aws_lambda_function" "citizen_api" {
       ENROLLMENTS_TABLE       = aws_dynamodb_table.enrollments.name
       FEEDBACK_TABLE          = aws_dynamodb_table.feedback.name
       INTERACTIONS_TABLE      = aws_dynamodb_table.interactions.name
-      BEDROCK_MODEL_ID        = var.bedrock_model_id
+      OPENAI_MODEL            = var.openai_model
+      OPENAI_API_KEY          = var.openai_api_key
     }
   }
 
