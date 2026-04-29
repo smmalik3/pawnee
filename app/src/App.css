@@ -235,6 +235,43 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.deck-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.deck-host {
+  height: min(72vh, 780px);
+  background: #111;
+}
+
+.deck-host .slides {
+  text-align: left;
+}
+
+.deck-host .slides h1,
+.deck-host .slides h2,
+.deck-host .slides h3,
+.deck-host .slides p,
+.deck-host .slides li {
+  color: #f6f7f9;
+}
+
+.deck-host .slides h1,
+.deck-host .slides h2,
+.deck-host .slides h3 {
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+}
+
+.deck-host .slides ul,
+.deck-host .slides ol {
+  margin-top: 0.5rem;
+}
+
+.deck-host .slides pre {
+  font-size: 0.58em;
+}
+
 @media (max-width: 760px) {
   .portal-header {
     flex-direction: column;
@@ -250,5 +287,9 @@ button:disabled {
 
   .timeline-meta {
     text-align: left;
+  }
+
+  .deck-host {
+    height: 68vh;
   }
 }
