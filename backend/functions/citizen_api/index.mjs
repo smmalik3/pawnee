@@ -2,6 +2,10 @@ import {
   DynamoDBClient,
 } from "@aws-sdk/client-dynamodb";
 import {
+  BedrockRuntimeClient,
+  InvokeModelCommand,
+} from "@aws-sdk/client-bedrock-runtime";
+import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
@@ -17,6 +21,9 @@ const engagementEventsTable = process.env.ENGAGEMENT_EVENTS_TABLE;
 const enrollmentsTable = process.env.ENROLLMENTS_TABLE;
 const feedbackTable = process.env.FEEDBACK_TABLE;
 const interactionsTable = process.env.INTERACTIONS_TABLE;
+const bedrockModelId = process.env.BEDROCK_MODEL_ID || "anthropic.claude-sonnet-4-5-20250929-v1:0";
+
+const bedrock = new BedrockRuntimeClient({});
 
 const TIERS = [
   { name: "Civic Supporter", minPoints: 0 },
@@ -31,6 +38,9 @@ const json = (statusCode, payload) => ({
 });
 
 const nowIso = () => new Date().toISOString();
+
+const chatbotSystemPrompt =
+  "You are the Pawnee civic assistant. Help users with civic services, program participation, and community questions about Pawnee. You may include friendly Parks and Recreation quotes when requested. Keep responses concise, upbeat, and practical.";
 
 function parseBody(event) {
   if (!event.body || event.isBase64Encoded) return {};
@@ -404,6 +414,62 @@ async function routeFeedback(citizenId, event) {
   return json(201, { message: "Feedback submitted" });
 }
 
+async function routeChat(event) {
+  const body = parseBody(event);
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  const history = Array.isArray(body.history) ? body.history : [];
+
+  if (!message) {
+    return json(400, { message: "message is required" });
+  }
+
+  const normalizedHistory = history
+    .filter((entry) => entry && typeof entry.content === "string")
+    .map((entry) => ({
+      role: entry.role === "assistant" ? "assistant" : "user",
+      content: [{ type: "text", text: String(entry.content).slice(0, 1200) }],
+    }))
+    .slice(-8);
+
+  const payload = {
+    anthropic_version: "bedrock-2023-05-31",
+    max_tokens: 350,
+    temperature: 0.7,
+    system: chatbotSystemPrompt,
+    messages: [
+      ...normalizedHistory,
+      {
+        role: "user",
+        content: [{ type: "text", text: message.slice(0, 2400) }],
+      },
+    ],
+  };
+
+  try {
+    const result = await bedrock.send(
+      new InvokeModelCommand({
+        modelId: bedrockModelId,
+        contentType: "application/json",
+        accept: "application/json",
+        body: JSON.stringify(payload),
+      }),
+    );
+
+    const decoded = new TextDecoder().decode(result.body);
+    const parsed = JSON.parse(decoded);
+    const answer = parsed?.content?.[0]?.text;
+
+    if (!answer) {
+      return json(502, { message: "Model returned an empty response" });
+    }
+
+    return json(200, { answer });
+  } catch (error) {
+    console.error("Bedrock chat error", error);
+    return json(502, { message: "Unable to generate chat response" });
+  }
+}
+
 export async function handler(event) {
   const method = event?.requestContext?.http?.method || "GET";
   const path = event?.rawPath || "/";
@@ -444,6 +510,10 @@ export async function handler(event) {
 
   if (method === "POST" && path === "/feedback") {
     return routeFeedback(citizenId, event);
+  }
+
+  if (method === "POST" && path === "/chat") {
+    return routeChat(event);
   }
 
   return json(404, { message: `No route for ${method} ${path}` });

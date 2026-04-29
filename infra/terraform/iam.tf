@@ -52,3 +52,23 @@ resource "aws_iam_role_policy" "citizen_api_ddb_access" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "citizen_api_bedrock_access" {
+  name = "${local.name_prefix}-citizen-api-bedrock-access"
+  role = aws_iam_role.citizen_api_lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "BedrockInvokeModel"
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

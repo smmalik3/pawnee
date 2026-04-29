@@ -37,6 +37,12 @@ type PersistedState = {
   feedback: Record<string, { rating: number; comment: string }>
 }
 
+type ChatMessage = {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+}
+
 const CITIZEN = {
   name: 'Ann Perkins',
   residentId: 'PAW-10027',
@@ -47,6 +53,7 @@ const CITIZEN = {
 
 const STORAGE_KEY = 'pawnee-citizen-state-v1'
 const PASSWORD = 'pawnee2026'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 const BASE_EVENTS: EngagementEvent[] = [
   { id: 'e1', title: 'Town Hall Attendance', date: '2026-04-12', source: 'Civic Voice', points: 8 },
@@ -489,6 +496,130 @@ function DeckScreen() {
   )
 }
 
+function ChatWidget() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content:
+        "Hi, I'm the Pawnee Assistant. Ask me about Pawnee services, local programs, or Parks and Rec quotes.",
+    },
+  ])
+
+  const sendMessage = async (event: FormEvent) => {
+    event.preventDefault()
+    const trimmed = input.trim()
+    if (!trimmed || isLoading) {
+      return
+    }
+
+    const userMessage: ChatMessage = {
+      id: `u-${Date.now()}`,
+      role: 'user',
+      content: trimmed,
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setInput('')
+    setIsLoading(true)
+
+    try {
+      if (!API_BASE_URL) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a-${Date.now()}`,
+            role: 'assistant',
+            content:
+              'Backend chat is not configured yet. Set VITE_API_BASE_URL after deploying Terraform, then I can answer live with Bedrock.',
+          },
+        ])
+        return
+      }
+
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          history: messages.slice(-8).map((m) => ({ role: m.role, content: m.content })),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Chat request failed (${response.status})`)
+      }
+
+      const payload = (await response.json()) as { answer?: string }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${Date.now()}`,
+          role: 'assistant',
+          content:
+            payload.answer ??
+            "I couldn't generate a response this time. Try asking about Pawnee programs or a Ron Swanson quote.",
+        },
+      ])
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${Date.now()}`,
+          role: 'assistant',
+          content:
+            "I hit a connection issue talking to Bedrock. Please try again in a moment, and ask me for a Parks and Rec quote while you're at it.",
+        },
+      ])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <button
+        className="chat-fab"
+        aria-label="Open Pawnee assistant"
+        onClick={() => setIsOpen((value) => !value)}
+      >
+        {isOpen ? 'Close' : 'Chat'}
+      </button>
+
+      {isOpen ? (
+        <section className="chat-panel" aria-label="Pawnee assistant panel">
+          <header>
+            <h3>Pawnee Assistant</h3>
+            <p>Bedrock powered, Parks and Rec ready.</p>
+          </header>
+          <div className="chat-messages">
+            {messages.map((message) => (
+              <article key={message.id} className={`chat-bubble ${message.role}`}>
+                {message.content}
+              </article>
+            ))}
+          </div>
+          <form onSubmit={sendMessage} className="chat-form">
+            <input
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask about Pawnee or request a quote..."
+            />
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Sending...' : 'Send'}
+            </button>
+          </form>
+        </section>
+      ) : null}
+    </>
+  )
+}
+
 function CitizenLayout({
   points,
   tier,
@@ -529,7 +660,6 @@ function CitizenLayout({
         <NavLink to="/activity">Activity</NavLink>
         <NavLink to="/feedback">Feedback</NavLink>
         <NavLink to="/profile">Profile</NavLink>
-        <NavLink to="/deck">Deck</NavLink>
       </nav>
       <main className="portal-main">
         <Routes>
@@ -559,6 +689,7 @@ function CitizenLayout({
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
+      <ChatWidget />
     </div>
   )
 }
