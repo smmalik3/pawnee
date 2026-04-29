@@ -1,7 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import Reveal from 'reveal.js'
+import Markdown from 'reveal.js/plugin/markdown'
+import 'reveal.js/reveal.css'
 import './App.css'
+import deckMarkdown from './deck/pawnee-business-case-deck.md?raw'
 
 type Program = {
   id: string
@@ -439,6 +443,52 @@ function ProfileScreen() {
   )
 }
 
+function DeckScreen() {
+  const revealRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!revealRef.current) {
+      return
+    }
+
+    const deck = new Reveal(revealRef.current, {
+      embedded: true,
+      hash: true,
+      controls: true,
+      progress: true,
+      transition: 'slide',
+      plugins: [Markdown],
+    })
+
+    void deck.initialize()
+
+    return () => {
+      void deck.destroy()
+    }
+  }, [])
+
+  return (
+    <section className="screen-grid">
+      <header>
+        <h2>Business Case Presentation</h2>
+        <p>
+          Swipe on touch devices or use arrow keys. This deck is embedded directly in the app for
+          Amplify deployment.
+        </p>
+      </header>
+      <article className="panel deck-panel">
+        <div className="reveal deck-host" ref={revealRef}>
+          <div className="slides">
+            <section data-markdown>
+              <textarea data-template>{deckMarkdown}</textarea>
+            </section>
+          </div>
+        </div>
+      </article>
+    </section>
+  )
+}
+
 function CitizenLayout({
   points,
   tier,
@@ -479,6 +529,7 @@ function CitizenLayout({
         <NavLink to="/activity">Activity</NavLink>
         <NavLink to="/feedback">Feedback</NavLink>
         <NavLink to="/profile">Profile</NavLink>
+        <NavLink to="/deck">Deck</NavLink>
       </nav>
       <main className="portal-main">
         <Routes>
@@ -504,6 +555,7 @@ function CitizenLayout({
             element={<FeedbackScreen feedback={feedback} onSubmitFeedback={onSubmitFeedback} />}
           />
           <Route path="/profile" element={<ProfileScreen />} />
+          <Route path="/deck" element={<DeckScreen />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
