@@ -3,7 +3,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import {
   BedrockRuntimeClient,
-  InvokeModelCommand,
+  ConverseCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import {
   DynamoDBDocumentClient,
@@ -427,37 +427,33 @@ async function routeChat(event) {
     .filter((entry) => entry && typeof entry.content === "string")
     .map((entry) => ({
       role: entry.role === "assistant" ? "assistant" : "user",
-      content: [{ type: "text", text: String(entry.content).slice(0, 1200) }],
+      content: [{ text: String(entry.content).slice(0, 1200) }],
     }))
     .slice(-8);
 
-  const payload = {
-    anthropic_version: "bedrock-2023-05-31",
-    max_tokens: 350,
-    temperature: 0.7,
-    system: chatbotSystemPrompt,
-    messages: [
-      ...normalizedHistory,
-      {
-        role: "user",
-        content: [{ type: "text", text: message.slice(0, 2400) }],
-      },
-    ],
-  };
-
   try {
     const result = await bedrock.send(
-      new InvokeModelCommand({
+      new ConverseCommand({
         modelId: bedrockModelId,
-        contentType: "application/json",
-        accept: "application/json",
-        body: JSON.stringify(payload),
+        system: [{ text: chatbotSystemPrompt }],
+        inferenceConfig: {
+          maxTokens: 350,
+          temperature: 0.7,
+        },
+        messages: [
+          ...normalizedHistory,
+          {
+            role: "user",
+            content: [{ text: message.slice(0, 2400) }],
+          },
+        ],
       }),
     );
 
-    const decoded = new TextDecoder().decode(result.body);
-    const parsed = JSON.parse(decoded);
-    const answer = parsed?.content?.[0]?.text;
+    const answer = result?.output?.message?.content
+      ?.map((part) => part?.text || "")
+      .join("")
+      .trim();
 
     if (!answer) {
       return json(502, { message: "Model returned an empty response" });
@@ -466,55 +462,79 @@ async function routeChat(event) {
     return json(200, { answer });
   } catch (error) {
     console.error("Bedrock chat error", error);
-    return json(502, { message: "Unable to generate chat response" });
+    const errorName = error?.name || "UnknownError";
+    const errorMessage = error?.message || "Unable to generate chat response";
+
+    if (errorName === "AccessDeniedException" || errorName === "ValidationException") {
+      return json(503, {
+        message: "Bedrock model invocation failed. Verify model access and model ID in this region.",
+        error: errorName,
+        detail: errorMessage,
+      });
+    }
+
+    return json(502, {
+      message: "Unable to generate chat response",
+      error: errorName,
+      detail: errorMessage,
+    });
   }
 }
 
 export async function handler(event) {
-  const method = event?.requestContext?.http?.method || "GET";
-  const path = event?.rawPath || "/";
+  try {
+    const method = event?.requestContext?.http?.method || "GET";
+    const path = event?.rawPath || "/";
 
-  if (method === "GET" && path === "/health") {
-    return json(200, { status: "ok", service: "pawnee-citizen-api" });
+    if (method === "GET" && path === "/health") {
+      return json(200, { status: "ok", service: "pawnee-citizen-api" });
+    }
+
+    if (method === "POST" && path === "/chat") {
+      return routeChat(event);
+    }
+
+    const citizenId = getUserId(event);
+    const email = getEmail(event);
+    await ensureSeedData(citizenId, email);
+
+    if (method === "GET" && path === "/citizen/profile") {
+      return routeProfile(citizenId);
+    }
+
+    if (method === "GET" && path === "/citizen/dashboard") {
+      return routeDashboard(citizenId);
+    }
+
+    if (method === "GET" && path === "/programs") {
+      return routePrograms();
+    }
+
+    if (method === "POST" && path.startsWith("/programs/") && path.endsWith("/enroll")) {
+      const parts = path.split("/").filter(Boolean);
+      const programId = parts.length === 3 ? parts[1] : "";
+      return routeEnroll(citizenId, programId);
+    }
+
+    if (method === "GET" && path === "/activity") {
+      return routeActivity(citizenId);
+    }
+
+    if (method === "GET" && path === "/interactions") {
+      return routeInteractions(citizenId);
+    }
+
+    if (method === "POST" && path === "/feedback") {
+      return routeFeedback(citizenId, event);
+    }
+
+    return json(404, { message: `No route for ${method} ${path}` });
+  } catch (error) {
+    console.error("Unhandled handler error", error);
+    return json(500, {
+      message: "Internal server error",
+      error: error?.name || "UnhandledError",
+      detail: error?.message || "Unexpected failure",
+    });
   }
-
-  const citizenId = getUserId(event);
-  const email = getEmail(event);
-  await ensureSeedData(citizenId, email);
-
-  if (method === "GET" && path === "/citizen/profile") {
-    return routeProfile(citizenId);
-  }
-
-  if (method === "GET" && path === "/citizen/dashboard") {
-    return routeDashboard(citizenId);
-  }
-
-  if (method === "GET" && path === "/programs") {
-    return routePrograms();
-  }
-
-  if (method === "POST" && path.startsWith("/programs/") && path.endsWith("/enroll")) {
-    const parts = path.split("/").filter(Boolean);
-    const programId = parts.length === 3 ? parts[1] : "";
-    return routeEnroll(citizenId, programId);
-  }
-
-  if (method === "GET" && path === "/activity") {
-    return routeActivity(citizenId);
-  }
-
-  if (method === "GET" && path === "/interactions") {
-    return routeInteractions(citizenId);
-  }
-
-  if (method === "POST" && path === "/feedback") {
-    return routeFeedback(citizenId, event);
-  }
-
-  if (method === "POST" && path === "/chat") {
-    return routeChat(event);
-  }
-
-  return json(404, { message: `No route for ${method} ${path}` });
 }
