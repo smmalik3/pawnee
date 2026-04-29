@@ -2,10 +2,6 @@ import {
   DynamoDBClient,
 } from "@aws-sdk/client-dynamodb";
 import {
-  BedrockRuntimeClient,
-  ConverseCommand,
-} from "@aws-sdk/client-bedrock-runtime";
-import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
@@ -21,9 +17,8 @@ const engagementEventsTable = process.env.ENGAGEMENT_EVENTS_TABLE;
 const enrollmentsTable = process.env.ENROLLMENTS_TABLE;
 const feedbackTable = process.env.FEEDBACK_TABLE;
 const interactionsTable = process.env.INTERACTIONS_TABLE;
-const bedrockModelId = process.env.BEDROCK_MODEL_ID || "anthropic.claude-sonnet-4-5-20250929-v1:0";
-
-const bedrock = new BedrockRuntimeClient({});
+const openAiModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const openAiApiKey = process.env.OPENAI_API_KEY || "";
 
 const TIERS = [
   { name: "Civic Supporter", minPoints: 0 },
@@ -427,33 +422,44 @@ async function routeChat(event) {
     .filter((entry) => entry && typeof entry.content === "string")
     .map((entry) => ({
       role: entry.role === "assistant" ? "assistant" : "user",
-      content: [{ text: String(entry.content).slice(0, 1200) }],
+      content: String(entry.content).slice(0, 1200),
     }))
     .slice(-8);
 
+  if (!openAiApiKey) {
+    return json(503, { message: "OPENAI_API_KEY is not configured" });
+  }
+
   try {
-    const result = await bedrock.send(
-      new ConverseCommand({
-        modelId: bedrockModelId,
-        system: [{ text: chatbotSystemPrompt }],
-        inferenceConfig: {
-          maxTokens: 350,
-          temperature: 0.7,
-        },
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openAiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: openAiModel,
+        temperature: 0.7,
+        max_tokens: 350,
         messages: [
+          { role: "system", content: chatbotSystemPrompt },
           ...normalizedHistory,
-          {
-            role: "user",
-            content: [{ text: message.slice(0, 2400) }],
-          },
+          { role: "user", content: message.slice(0, 2400) },
         ],
       }),
-    );
+    });
 
-    const answer = result?.output?.message?.content
-      ?.map((part) => part?.text || "")
-      .join("")
-      .trim();
+    const payload = await response.json();
+
+    if (!response.ok) {
+      return json(502, {
+        message: "OpenAI chat request failed",
+        error: payload?.error?.type || "OpenAIError",
+        detail: payload?.error?.message || `HTTP ${response.status}`,
+      });
+    }
+
+    const answer = payload?.choices?.[0]?.message?.content?.trim();
 
     if (!answer) {
       return json(502, { message: "Model returned an empty response" });
@@ -461,17 +467,9 @@ async function routeChat(event) {
 
     return json(200, { answer });
   } catch (error) {
-    console.error("Bedrock chat error", error);
+    console.error("OpenAI chat error", error);
     const errorName = error?.name || "UnknownError";
     const errorMessage = error?.message || "Unable to generate chat response";
-
-    if (errorName === "AccessDeniedException" || errorName === "ValidationException") {
-      return json(503, {
-        message: "Bedrock model invocation failed. Verify model access and model ID in this region.",
-        error: errorName,
-        detail: errorMessage,
-      });
-    }
 
     return json(502, {
       message: "Unable to generate chat response",

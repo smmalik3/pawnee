@@ -28,10 +28,17 @@ variable "log_retention_days" {
   default     = 14
 }
 
-variable "bedrock_model_id" {
-  description = "Bedrock model ID used for chatbot generation."
+variable "openai_model" {
+  description = "OpenAI model name for chatbot generation."
   type        = string
-  default     = "anthropic.claude-sonnet-4-5-20250929-v1:0"
+  default     = "gpt-4o-mini"
+}
+
+variable "openai_api_key" {
+  description = "OpenAI API key for chatbot requests."
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 variable "create_amplify_ssm_parameters" {

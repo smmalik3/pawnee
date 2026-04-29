@@ -8,3 +8,7 @@
 crash.log
 **app/node_modules**
 **node_modules**
+# Terraform variable files (often contain secrets)
+*.tfvars
+*.tfvars.json
+!example.tfvars
