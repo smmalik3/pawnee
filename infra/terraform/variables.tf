@@ -28,6 +28,24 @@ variable "log_retention_days" {
   default     = 14
 }
 
+variable "create_amplify_ssm_parameters" {
+  description = "Whether to create SSM parameters under /amplify/<app_id>/<branch>/ for frontend environment variables."
+  type        = bool
+  default     = false
+}
+
+variable "amplify_app_id" {
+  description = "Amplify app ID used in SSM parameter path, for example d2i5owuyjcuug3."
+  type        = string
+  default     = ""
+}
+
+variable "amplify_branch_name" {
+  description = "Amplify branch name used in SSM parameter path."
+  type        = string
+  default     = "main"
+}
+
 variable "tags" {
   description = "Optional extra tags to apply to resources."
   type        = map(string)

@@ -29,3 +29,8 @@ output "backend_tables" {
     interactions      = aws_dynamodb_table.interactions.name
   }
 }
+
+output "amplify_ssm_parameter_names" {
+  description = "SSM parameter names created for Amplify frontend env values (if enabled)."
+  value       = [for param in aws_ssm_parameter.amplify_frontend_env : param.name]
+}
