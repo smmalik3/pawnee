@@ -240,6 +240,25 @@ button:disabled {
   overflow: hidden;
 }
 
+.quick-deck-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.quick-deck-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.quick-deck-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .deck-host {
   height: min(72vh, 780px);
   background: #111;
