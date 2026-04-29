@@ -1,0 +1,108 @@
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100svh;
+}
+
+.app-header {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(240, 168, 80, 0.22), transparent 40%),
+    radial-gradient(circle at 85% 5%, rgba(21, 114, 161, 0.18), transparent 35%),
+    var(--bg);
+}
+
+.app-header p {
+  max-width: 60ch;
+}
+
+.top-nav {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+.top-nav a {
+  color: var(--text-h);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.top-nav a.active {
+  background: #19374d;
+  color: #f4efe8;
+  border-color: #19374d;
+}
+
+main {
+  padding: 1.6rem;
+}
+
+.screen {
+  display: grid;
+  gap: 1rem;
+}
+
+.screen-header p {
+  max-width: 65ch;
+}
+
+.card-grid,
+.milestone-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.work-card,
+.milestone-list article {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.work-card h3,
+.milestone-list h3 {
+  margin-top: 0;
+}
+
+.pill {
+  display: inline-block;
+  margin-top: 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+}
+
+.pill.mvp {
+  background: #dff5e2;
+  color: #0f6420;
+}
+
+.pill.in-progress {
+  background: #e1f0fd;
+  color: #0b4f82;
+}
+
+.pill.planned {
+  background: #f5ead9;
+  color: #704d18;
+}
+
+@media (max-width: 720px) {
+  .app-header,
+  main {
+    padding: 1rem;
+  }
+
+  h1 {
+    margin-top: 0;
+  }
+}
