@@ -50,6 +50,30 @@ Use these environment values in your frontend app:
 - `VITE_COGNITO_USER_POOL_ID` from `cognito_user_pool_id`
 - `VITE_COGNITO_CLIENT_ID` from `cognito_user_pool_client_id`
 
+### Optional: Manage Amplify Environment Variables via Terraform + SSM
+
+If your Amplify logs show warnings around `process.env.secrets` and SSM path retrieval, you can have Terraform write the expected values to the same path Amplify checks.
+
+1. Set these in `terraform.tfvars`:
+
+```hcl
+create_amplify_ssm_parameters = true
+amplify_app_id                = "<your-amplify-app-id>"
+amplify_branch_name           = "main"
+```
+
+2. Apply Terraform.
+3. Confirm parameters exist under:
+  - `/amplify/<app-id>/<branch>/VITE_AWS_REGION`
+  - `/amplify/<app-id>/<branch>/VITE_API_BASE_URL`
+  - `/amplify/<app-id>/<branch>/VITE_COGNITO_USER_POOL_ID`
+  - `/amplify/<app-id>/<branch>/VITE_COGNITO_CLIENT_ID`
+
+Notes:
+- These are created as SSM `String` parameters.
+- Amplify service role must have SSM read permissions (`ssm:GetParametersByPath`, `ssm:GetParameter`) for this path.
+- If your Amplify app uses a custom service role with restricted policies, grant SSM read access explicitly.
+
 ## Notes
 
 - `/health` is public.
