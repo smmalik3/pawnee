@@ -8,7 +8,7 @@ allowed_origins = [
 ]
 
 log_retention_days = 14
-bedrock_model_id   = "anthropic.claude-sonnet-4-5-20250929-v1:0"
+bedrock_model_id   = "amazon.nova-lite-v1:0"
 
 # Optional: write frontend env vars to Amplify SSM path
 create_amplify_ssm_parameters = false
