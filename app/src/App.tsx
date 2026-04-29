@@ -54,6 +54,7 @@ const CITIZEN = {
 const STORAGE_KEY = 'pawnee-citizen-state-v1'
 const PASSWORD = 'pawnee2026'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const API_ROOT = (API_BASE_URL ?? '').replace(/\/+$/, '')
 
 const BASE_EVENTS: EngagementEvent[] = [
   { id: 'e1', title: 'Town Hall Attendance', date: '2026-04-12', source: 'Civic Voice', points: 8 },
@@ -527,7 +528,7 @@ function ChatWidget() {
     setIsLoading(true)
 
     try {
-      if (!API_BASE_URL) {
+      if (!API_ROOT) {
         setMessages((prev) => [
           ...prev,
           {
@@ -540,7 +541,7 @@ function ChatWidget() {
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetch(`${API_ROOT}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
