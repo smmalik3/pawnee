@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart TB
-	A[Top Bar: Pawnee Brand | Dashboard | Programs | Activity | Profile | Notifications]
+	A[Top Bar: Pawnee Brand - Dashboard - Programs - Activity - Profile - Notifications]
 	B[Hero Row]
 	B1[Points Balance Card]
 	B2[Current Tier Card]
@@ -68,7 +68,7 @@ flowchart LR
 	A2[Saved Recent Profiles]
 
 	B[Center Column]
-	B1[Citizen Summary Header\nName | Tier | Points | Milestone]
+	B1[Citizen Summary Header<br/>Name - Tier - Points - Milestone]
 	B2[Engagement History Snippet]
 	B3[Current Issues / Recent Interactions]
 
@@ -76,7 +76,7 @@ flowchart LR
 	C1[AI Next Best Actions]
 	C2[Recognition Prompt]
 	C3[Knowledge Guidance]
-	C4[Quick Actions\nEnroll | Follow-up | Escalate]
+	C4[Quick Actions<br/>Enroll - Follow-up - Escalate]
 
 	A --> A1
 	A --> A2
@@ -119,7 +119,7 @@ Right column:
 
 ```mermaid
 flowchart TB
-	A[Top Filters: Date Range | Program | Agent | Service Location]
+	A[Top Filters: Date Range - Program - Agent - Service Location]
 	B[Insights Grid]
 	B1[Service Rating Trend Chart]
 	B2[Low-Rating Review Queue]
