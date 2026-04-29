@@ -28,6 +28,12 @@ variable "log_retention_days" {
   default     = 14
 }
 
+variable "bedrock_model_id" {
+  description = "Bedrock model ID used for chatbot generation."
+  type        = string
+  default     = "anthropic.claude-sonnet-4-5-20250929-v1:0"
+}
+
 variable "create_amplify_ssm_parameters" {
   description = "Whether to create SSM parameters under /amplify/<app_id>/<branch>/ for frontend environment variables."
   type        = bool

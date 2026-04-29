@@ -94,6 +94,12 @@ resource "aws_apigatewayv2_route" "feedback_submit" {
   authorizer_id      = aws_apigatewayv2_authorizer.jwt.id
 }
 
+resource "aws_apigatewayv2_route" "chat" {
+  api_id    = aws_apigatewayv2_api.backend.id
+  route_key = "POST /chat"
+  target    = "integrations/${aws_apigatewayv2_integration.citizen_api.id}"
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.backend.id
   name        = "$default"

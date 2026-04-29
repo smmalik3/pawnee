@@ -7,6 +7,7 @@ This Terraform stack provisions the entire AWS backend for the citizen app, excl
 - Cognito User Pool + App Client + Hosted Domain
 - API Gateway HTTP API with JWT authorization
 - Lambda API service (Node.js)
+- Bedrock-powered chat route using Claude Sonnet 4.5
 - DynamoDB domain tables:
   - citizens
   - programs
@@ -39,6 +40,18 @@ terraform apply
 terraform output api_base_url
 terraform output cognito_user_pool_id
 terraform output cognito_user_pool_client_id
+```
+
+## Chatbot Backend
+
+- Chat route: `POST /chat`
+- LLM service: Amazon Bedrock
+- Default model: `anthropic.claude-sonnet-4-5-20250929-v1:0`
+
+You can override the model with:
+
+```hcl
+bedrock_model_id = "<your-bedrock-model-id>"
 ```
 
 ## Frontend Integration (Amplify App)
