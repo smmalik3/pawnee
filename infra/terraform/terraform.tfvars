@@ -4,7 +4,7 @@ aws_region   = "us-east-1"
 
 allowed_origins = [
   "http://localhost:5173",
-  "https://your-amplify-domain.amplifyapp.com"
+  "https://main.d2i5owuyjcuug3.amplifyapp.com"
 ]
 
 log_retention_days = 14
