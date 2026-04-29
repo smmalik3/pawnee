@@ -1,11 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import Reveal from 'reveal.js'
-import Markdown from 'reveal.js/plugin/markdown'
-import 'reveal.js/reveal.css'
 import './App.css'
-import deckMarkdown from './deck/pawnee-business-case-deck.md?raw'
 
 type Program = {
   id: string
@@ -452,45 +448,100 @@ function ProfileScreen() {
 }
 
 function DeckScreen() {
-  const revealRef = useRef<HTMLDivElement | null>(null)
+  const slides = [
+    {
+      title: 'Pawnee Smart Civic Engagement Desk',
+      subtitle: 'Quick Project Presentation',
+      bullets: [
+        'Citizen portal that rewards civic participation',
+        'Programs, feedback, and activity timeline in one place',
+        'Built for rapid municipal adoption',
+      ],
+    },
+    {
+      title: 'The Problem',
+      subtitle: 'Low Participation, Fragmented Visibility',
+      bullets: [
+        'Citizens often do not know where or how to engage',
+        'Departments cannot easily track participation quality',
+        'Feedback loops are slow and mostly manual',
+      ],
+    },
+    {
+      title: 'The Solution',
+      subtitle: 'One Experience Across Engagement Journeys',
+      bullets: [
+        'Dashboard with points, tier, and recommendations',
+        'Program enrollment and engagement history',
+        'Service feedback capture and profile context',
+      ],
+    },
+    {
+      title: 'AI Assistant',
+      subtitle: 'ChatGPT-Powered Resident Support',
+      bullets: [
+        'Floating assistant available across the portal',
+        'Answers civic service and program questions',
+        'Designed for concise and practical responses',
+      ],
+    },
+    {
+      title: 'Architecture Overview',
+      subtitle: 'Modern, Serverless, Scalable',
+      bullets: [
+        'React + Vite frontend on Amplify',
+        'API Gateway + Lambda + DynamoDB backend',
+        'Terraform-managed infrastructure and environment config',
+      ],
+    },
+    {
+      title: 'Value & Next Steps',
+      subtitle: 'Ready for Pilot',
+      bullets: [
+        'Faster citizen engagement and richer participation data',
+        'Improved service quality signal through feedback trends',
+        'Next: full API wiring for all frontend screens and pilot launch',
+      ],
+    },
+  ]
 
-  useEffect(() => {
-    if (!revealRef.current) {
-      return
-    }
+  const [index, setIndex] = useState(0)
+  const active = slides[index]
+  const atStart = index === 0
+  const atEnd = index === slides.length - 1
 
-    const deck = new Reveal(revealRef.current, {
-      embedded: true,
-      hash: true,
-      controls: true,
-      progress: true,
-      transition: 'slide',
-      plugins: [Markdown],
-    })
+  const goPrev = () => {
+    if (!atStart) setIndex((value) => value - 1)
+  }
 
-    void deck.initialize()
-
-    return () => {
-      void deck.destroy()
-    }
-  }, [])
+  const goNext = () => {
+    if (!atEnd) setIndex((value) => value + 1)
+  }
 
   return (
     <section className="screen-grid">
       <header>
-        <h2>Business Case Presentation</h2>
-        <p>
-          Swipe on touch devices or use arrow keys. This deck is embedded directly in the app for
-          Amplify deployment.
-        </p>
+        <h2>Quick Presentation</h2>
+        <p>Use Previous/Next to walk through the business case.</p>
       </header>
-      <article className="panel deck-panel">
-        <div className="reveal deck-host" ref={revealRef}>
-          <div className="slides">
-            <section data-markdown>
-              <textarea data-template>{deckMarkdown}</textarea>
-            </section>
-          </div>
+      <article className="panel quick-deck-panel">
+        <p className="eyebrow">
+          Slide {index + 1} of {slides.length}
+        </p>
+        <h3>{active.title}</h3>
+        <p>{active.subtitle}</p>
+        <ul className="quick-deck-list">
+          {active.bullets.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <div className="quick-deck-controls">
+          <button type="button" className="ghost-button" onClick={goPrev} disabled={atStart}>
+            Previous
+          </button>
+          <button type="button" onClick={goNext} disabled={atEnd}>
+            Next
+          </button>
         </div>
       </article>
     </section>
@@ -661,6 +712,7 @@ function CitizenLayout({
         <NavLink to="/activity">Activity</NavLink>
         <NavLink to="/feedback">Feedback</NavLink>
         <NavLink to="/profile">Profile</NavLink>
+        <NavLink to="/deck">Deck</NavLink>
       </nav>
       <main className="portal-main">
         <Routes>
@@ -812,6 +864,7 @@ function App() {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/deck" element={<DeckScreen />} />
         <Route path="*" element={<LoginScreen onLogin={handleLogin} />} />
       </Routes>
     )
