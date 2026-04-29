@@ -1,0 +1,14 @@
+project_name = "pawnee-civic-engagement"
+environment  = "dev"
+aws_region   = "us-east-1"
+
+allowed_origins = [
+  "http://localhost:5173",
+  "https://your-amplify-domain.amplifyapp.com"
+]
+
+log_retention_days = 14
+
+tags = {
+  Owner = "Pawnee-IT"
+}
